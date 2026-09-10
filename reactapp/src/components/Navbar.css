@@ -1,0 +1,208 @@
+.navbar-wrapper {
+  background: rgba(250, 251, 248, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sage-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-dark);
+  flex-shrink: 0;
+}
+
+.brand-leaf {
+  font-size: 22px;
+  filter: drop-shadow(0 2px 4px rgba(113, 133, 106, 0.2));
+  line-height: 1;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-dark);
+  line-height: 1.1;
+}
+
+.brand-subtitle {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--sage-primary);
+  font-weight: 600;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.nav-link:hover {
+  color: var(--text-dark);
+  background: var(--cream-hover);
+}
+
+.nav-link.active {
+  color: var(--text-dark);
+  background: var(--sage-light);
+  font-weight: 600;
+}
+
+.nav-link-btn {
+  background: var(--sage-primary);
+  color: #ffffff !important;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 1px 4px rgba(113, 133, 106, 0.2);
+}
+
+.nav-link-btn:hover {
+  background: var(--sage-dark) !important;
+  transform: translateY(-1px);
+}
+
+/* Auth & Role Switcher Widget */
+.role-switcher-widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--sage-border);
+  padding: 4px 8px 4px 10px;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  flex-shrink: 0;
+}
+
+.role-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.role-avatar {
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.role-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+
+.user-role-label {
+  font-size: 9.5px;
+  color: var(--sage-primary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.role-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--sage-border);
+  margin: 0 2px;
+}
+
+.role-selector-dropdown {
+  background: var(--sage-subtle);
+  border: 1px solid var(--sage-border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-dark);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.role-selector-dropdown:hover {
+  border-color: var(--sage-primary);
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+}
+
+@media (max-width: 1024px) {
+  .brand-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 850px) {
+  .navbar-container {
+    padding: 8px 16px;
+  }
+  .user-role-label {
+    display: none;
+  }
+}
