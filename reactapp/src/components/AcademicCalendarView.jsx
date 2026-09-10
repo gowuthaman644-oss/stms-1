@@ -4,6 +4,63 @@ import { Calendar as CalendarIcon, Plus, Flag, Award, Sun, Trash2, CheckCircle2,
 import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent } from "../services/scheduleService";
 import { useAuth } from "../context/AuthContext";
 
+const CALENDAR_DEMO_SAMPLES = [
+  {
+    academicYear: "2026-2027",
+    eventName: "Science Exhibition & Tech Expo",
+    eventType: "EVENT",
+    startDate: "2026-10-24",
+    endDate: "2026-10-25",
+    isHoliday: false,
+    description: "Annual inter-school science models and technology exhibition in the auditorium.",
+  },
+  {
+    academicYear: "2026-2027",
+    eventName: "Diwali Holidays",
+    eventType: "HOLIDAY",
+    startDate: "2026-11-01",
+    endDate: "2026-11-03",
+    isHoliday: true,
+    description: "School closed for Diwali celebrations and cultural festival.",
+  },
+  {
+    academicYear: "2026-2027",
+    eventName: "Annual Athletic & Sports Meet",
+    eventType: "EVENT",
+    startDate: "2026-12-12",
+    endDate: "2026-12-12",
+    isHoliday: false,
+    description: "Track and field events, inter-house competitions, and medals ceremony.",
+  },
+  {
+    academicYear: "2026-2027",
+    eventName: "Half-Yearly Assessment Exams",
+    eventType: "EXAM_PERIOD",
+    startDate: "2026-12-15",
+    endDate: "2026-12-22",
+    isHoliday: false,
+    description: "Mid-year summative assessments for Classes 6 to 10.",
+  },
+  {
+    academicYear: "2026-2027",
+    eventName: "Parent-Teacher Review Conference",
+    eventType: "MEETING",
+    startDate: "2027-01-09",
+    endDate: "2027-01-09",
+    isHoliday: false,
+    description: "Discussion on student performance, attendance, and second-term targets.",
+  },
+  {
+    academicYear: "2026-2027",
+    eventName: "Pongal & Makar Sankranti Vacation",
+    eventType: "HOLIDAY",
+    startDate: "2027-01-14",
+    endDate: "2027-01-17",
+    isHoliday: true,
+    description: "Harvest festival holidays across all grades.",
+  },
+];
+
 function AcademicCalendarView() {
   const { role } = useAuth();
   const [events, setEvents] = useState([]);
@@ -12,6 +69,7 @@ function AcademicCalendarView() {
   const [feedback, setFeedback] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [demoEventIndex, setDemoEventIndex] = useState(0);
 
   const [newEvent, setNewEvent] = useState({
     academicYear: "2026-2027",
@@ -22,6 +80,13 @@ function AcademicCalendarView() {
     isHoliday: true,
     description: "",
   });
+
+  const prefillDemoEvent = () => {
+    const sample = CALENDAR_DEMO_SAMPLES[demoEventIndex % CALENDAR_DEMO_SAMPLES.length];
+    setNewEvent(sample);
+    setDemoEventIndex((prev) => prev + 1);
+    setError("");
+  };
 
   const loadEvents = async () => {
     try {
@@ -174,9 +239,36 @@ function AcademicCalendarView() {
             boxShadow: "var(--shadow-sm)",
           }}
         >
-          <h3 style={{ margin: "0 0 16px", fontFamily: "var(--font-serif)" }}>
-            Create New Academic Calendar Event
-          </h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontFamily: "var(--font-serif)" }}>
+              Create New Academic Calendar Event
+            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {demoEventIndex > 0 && (
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "var(--sage-primary)",
+                    fontWeight: "600",
+                    background: "var(--sage-subtle)",
+                    padding: "3px 8px",
+                    borderRadius: "12px",
+                    border: "1px solid var(--sage-border)",
+                  }}
+                >
+                  Demo #{((demoEventIndex - 1) % CALENDAR_DEMO_SAMPLES.length) + 1} of {CALENDAR_DEMO_SAMPLES.length}
+                </span>
+              )}
+              <button
+                type="button"
+                className="quick-demo-btn"
+                onClick={prefillDemoEvent}
+                title="Click repeatedly to cycle through different demo events"
+              >
+                ✨ Autofill Demo
+              </button>
+            </div>
+          </div>
           <form onSubmit={handleAddEvent}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 16 }}>
               <div>

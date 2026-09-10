@@ -2,6 +2,117 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { addSchedule } from "../services/scheduleService";
 
+const DEMO_SAMPLES = [
+  {
+    className: "10-A",
+    subject: "Mathematics",
+    teacherName: "Priya Krishnan",
+    dayOfWeek: "Monday",
+    startTime: "08:30",
+    endTime: "09:15",
+    attendanceNote: "Present",
+  },
+  {
+    className: "10-A",
+    subject: "Physics & Science Lab",
+    teacherName: "Suresh Kumar",
+    dayOfWeek: "Tuesday",
+    startTime: "09:15",
+    endTime: "10:00",
+    attendanceNote: "Lab Session",
+  },
+  {
+    className: "9-B",
+    subject: "English Literature",
+    teacherName: "Meena Iyer",
+    dayOfWeek: "Wednesday",
+    startTime: "10:15",
+    endTime: "11:00",
+    attendanceNote: "Special Lecture",
+  },
+  {
+    className: "8-A",
+    subject: "Computer Science",
+    teacherName: "Arvind Raj",
+    dayOfWeek: "Thursday",
+    startTime: "11:00",
+    endTime: "11:45",
+    attendanceNote: "Lab Session",
+  },
+  {
+    className: "10-B",
+    subject: "Chemistry Practical",
+    teacherName: "Kavitha Nair",
+    dayOfWeek: "Friday",
+    startTime: "12:30",
+    endTime: "01:15",
+    attendanceNote: "Lab Session",
+  },
+  {
+    className: "7-A",
+    subject: "Social Science",
+    teacherName: "Rajesh Sharma",
+    dayOfWeek: "Monday",
+    startTime: "01:15",
+    endTime: "02:00",
+    attendanceNote: "Present",
+  },
+  {
+    className: "6-B",
+    subject: "Physical Education",
+    teacherName: "Vikram Singh",
+    dayOfWeek: "Wednesday",
+    startTime: "02:00",
+    endTime: "02:45",
+    attendanceNote: "Present",
+  },
+  {
+    className: "9-A",
+    subject: "Biology & Environment",
+    teacherName: "Dr. Clara Evans",
+    dayOfWeek: "Tuesday",
+    startTime: "10:15",
+    endTime: "11:15",
+    attendanceNote: "Lab Session",
+  },
+  {
+    className: "8-B",
+    subject: "Tamil Language",
+    teacherName: "K. Selvam",
+    dayOfWeek: "Thursday",
+    startTime: "08:30",
+    endTime: "09:15",
+    attendanceNote: "Present",
+  },
+  {
+    className: "10-A",
+    subject: "Mathematics Problem Solving",
+    teacherName: "Priya Krishnan",
+    dayOfWeek: "Friday",
+    startTime: "11:00",
+    endTime: "11:45",
+    attendanceNote: "Exam Period",
+  },
+  {
+    className: "7-B",
+    subject: "Hindi Language & Grammar",
+    teacherName: "Sunita Verma",
+    dayOfWeek: "Monday",
+    startTime: "09:15",
+    endTime: "10:00",
+    attendanceNote: "Substitute",
+  },
+  {
+    className: "6-A",
+    subject: "General Science & Nature",
+    teacherName: "Suresh Kumar",
+    dayOfWeek: "Wednesday",
+    startTime: "11:00",
+    endTime: "11:45",
+    attendanceNote: "Special Lecture",
+  },
+];
+
 function AddScheduleEntry() {
   const navigate = useNavigate();
 
@@ -15,6 +126,7 @@ function AddScheduleEntry() {
     attendanceNote: "",
   });
 
+  const [demoIndex, setDemoIndex] = useState(0);
   const [error, setError] = useState("");
 
   const handleChange = (event) => {
@@ -35,15 +147,10 @@ function AddScheduleEntry() {
   };
 
   const prefillSample = () => {
-    setFormData({
-      className: "10-A",
-      subject: "Science & Biology",
-      teacherName: "Dr. Clara Evans",
-      dayOfWeek: "Tuesday",
-      startTime: "10:15",
-      endTime: "11:15",
-      attendanceNote: "Laboratory Practical",
-    });
+    const sample = DEMO_SAMPLES[demoIndex % DEMO_SAMPLES.length];
+    setFormData(sample);
+    setDemoIndex((prev) => prev + 1);
+    setError("");
   };
 
   const [submitting, setSubmitting] = useState(false);
@@ -82,11 +189,27 @@ function AddScheduleEntry() {
           </p>
         </div>
 
-        <div className="header-actions">
+        <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {demoIndex > 0 && (
+            <span
+              style={{
+                fontSize: "12px",
+                color: "var(--sage-primary)",
+                fontWeight: "600",
+                background: "var(--sage-subtle)",
+                padding: "4px 10px",
+                borderRadius: "12px",
+                border: "1px solid var(--sage-border)",
+              }}
+            >
+              Demo #{((demoIndex - 1) % DEMO_SAMPLES.length) + 1} of {DEMO_SAMPLES.length} loaded
+            </span>
+          )}
           <button
             type="button"
             className="quick-demo-btn"
             onClick={prefillSample}
+            title="Click repeatedly to cycle through 12 different demo details"
           >
             ✨ Autofill Demo
           </button>

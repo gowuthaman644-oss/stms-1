@@ -4,6 +4,51 @@ import { Building2, CheckCircle2, XCircle, Plus, Wrench, Trash2, AlertCircle } f
 import { getResources, createResource, bookResource, releaseResource, deleteResource } from "../services/scheduleService";
 import { useAuth } from "../context/AuthContext";
 
+const RESOURCE_DEMO_SAMPLES = [
+  {
+    roomNumber: "Room 203 - Smart Class",
+    buildingName: "Main Academic Block",
+    capacity: 40,
+    roomType: "Classroom",
+    equipment: "Interactive Smartboard, Dual Speakers, High-Speed Wi-Fi",
+  },
+  {
+    roomNumber: "Science Lab 204",
+    buildingName: "Science & Discovery Wing",
+    capacity: 45,
+    roomType: "Laboratory",
+    equipment: "Compound microscopes, Bunsen burners, chemical fume hoods",
+  },
+  {
+    roomNumber: "Computer Lab 302",
+    buildingName: "Technology Block",
+    capacity: 50,
+    roomType: "Computer Lab",
+    equipment: "40 High-performance PCs, gigabit LAN, laser printer",
+  },
+  {
+    roomNumber: "Seminar Hall B",
+    buildingName: "Administrative Wing",
+    capacity: 120,
+    roomType: "Auditorium",
+    equipment: "Podium mic, surround sound system, motorized laser projector",
+  },
+  {
+    roomNumber: "Mathematics Lab 106",
+    buildingName: "Main Academic Block",
+    capacity: 35,
+    roomType: "Classroom",
+    equipment: "Geometric kits, 3D math models, interactive graphing display",
+  },
+  {
+    roomNumber: "Language Lab 108",
+    buildingName: "Humanities Wing",
+    capacity: 38,
+    roomType: "Classroom",
+    equipment: "Student audio headsets, digital phonetics software station",
+  },
+];
+
 function ResourceManagementView() {
   const { role } = useAuth();
   const [rooms, setRooms] = useState([]);
@@ -12,6 +57,7 @@ function ResourceManagementView() {
   const [feedback, setFeedback] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [demoRoomIndex, setDemoRoomIndex] = useState(0);
 
   const [newRoom, setNewRoom] = useState({
     roomNumber: "",
@@ -20,6 +66,13 @@ function ResourceManagementView() {
     roomType: "Classroom",
     equipment: "Smartboard, 4K Projector",
   });
+
+  const prefillDemoRoom = () => {
+    const sample = RESOURCE_DEMO_SAMPLES[demoRoomIndex % RESOURCE_DEMO_SAMPLES.length];
+    setNewRoom(sample);
+    setDemoRoomIndex((prev) => prev + 1);
+    setError("");
+  };
 
   const loadRooms = async () => {
     try {
@@ -295,9 +348,36 @@ function ResourceManagementView() {
               border: "1px solid var(--sage-border)",
             }}
           >
-            <h3 style={{ margin: "0 0 16px", fontFamily: "var(--font-serif)" }}>
-              Add New Educational Facility
-            </h3>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontFamily: "var(--font-serif)" }}>
+                Add New Educational Facility
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {demoRoomIndex > 0 && (
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      color: "var(--sage-primary)",
+                      fontWeight: "600",
+                      background: "var(--sage-subtle)",
+                      padding: "2px 6px",
+                      borderRadius: "10px",
+                      border: "1px solid var(--sage-border)",
+                    }}
+                  >
+                    #{((demoRoomIndex - 1) % RESOURCE_DEMO_SAMPLES.length) + 1}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="quick-demo-btn"
+                  onClick={prefillDemoRoom}
+                  title="Click repeatedly to cycle different facility samples"
+                >
+                  ✨ Autofill Demo
+                </button>
+              </div>
+            </div>
 
             <form onSubmit={handleAddRoom}>
               <div style={{ marginBottom: 14 }}>
