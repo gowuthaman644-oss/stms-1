@@ -220,27 +220,22 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAcademicEvents() {
-        if (academicEventRepository.count() > 5) {
-            return;
+        if (academicEventRepository.count() > 0) {
+            boolean hasLegacyData = academicEventRepository.findAll().stream()
+                    .anyMatch(e -> "Independence Day Celebration".equals(e.getEventName()) || "Gandhi Jayanti Holiday".equals(e.getEventName()));
+            if (!hasLegacyData) {
+                return;
+            }
+            academicEventRepository.deleteAll();
         }
 
-        academicEventRepository.deleteAll();
-
         List<AcademicEvent> events = new ArrayList<>();
-        events.add(new AcademicEvent("2026-2027", "Independence Day Celebration", "HOLIDAY", "2026-08-15", "2026-08-15", true, "National Flag hoisting and patriotic cultural assembly."));
-        events.add(new AcademicEvent("2026-2027", "Teachers' Day", "TERM_START", "2026-09-05", "2026-09-05", false, "Special student-led honoring ceremonies and academic presentations."));
-        events.add(new AcademicEvent("2026-2027", "Quarterly Examination", "EXAM_PERIOD", "2026-09-21", "2026-09-30", false, "First term evaluation assessments across grades 6 to 10."));
-        events.add(new AcademicEvent("2026-2027", "Gandhi Jayanti Holiday", "HOLIDAY", "2026-10-02", "2026-10-02", true, "National holiday observing the birth anniversary of Mahatma Gandhi."));
-        events.add(new AcademicEvent("2026-2027", "Science Exhibition", "TERM_START", "2026-10-16", "2026-10-17", false, "Inter-class science model display, robotics demos, and innovation fair."));
-        events.add(new AcademicEvent("2026-2027", "Diwali & Autumn Break", "HOLIDAY", "2026-10-30", "2026-11-04", true, "School closed for festive holidays."));
-        events.add(new AcademicEvent("2026-2027", "Half-Yearly Examination", "EXAM_PERIOD", "2026-11-16", "2026-11-27", false, "Comprehensive mid-year examinations for all grades."));
-        events.add(new AcademicEvent("2026-2027", "Annual Sports Day", "TERM_START", "2026-12-04", "2026-12-05", false, "Track and field events, march-past, and inter-house athletic meets."));
-        events.add(new AcademicEvent("2026-2027", "School Annual Day", "TERM_START", "2026-12-22", "2026-12-22", false, "Grand cultural gala, drama, music, and academic prize distributions."));
-        events.add(new AcademicEvent("2026-2027", "Winter Vacation", "HOLIDAY", "2026-12-23", "2027-01-03", true, "Campus winter break. Administrative offices open on reduced schedule."));
-        events.add(new AcademicEvent("2026-2027", "Republic Day Celebration", "HOLIDAY", "2027-01-26", "2027-01-26", true, "National holiday, ceremonial parade and flag unfurling ceremony."));
-        events.add(new AcademicEvent("2026-2027", "Parent-Teacher Meeting", "TERM_END", "2027-02-12", "2027-02-13", false, "Term progress reporting and one-on-one parent feedback sessions."));
-        events.add(new AcademicEvent("2026-2027", "Annual Final Examinations", "EXAM_PERIOD", "2027-03-15", "2027-03-30", false, "End of year cumulative academic board examinations."));
-        events.add(new AcademicEvent("2026-2027", "Inter-School Competition", "TERM_END", "2027-04-05", "2027-04-07", false, "Zonal academic quiz, debate, and mathematics olympiad."));
+        events.add(new AcademicEvent("2026-2027", "Unit Test", "EXAM_PERIOD", "2026-08-20", "2026-08-22", false, "First cycle formative assessments across subjects."));
+        events.add(new AcademicEvent("2026-2027", "Parent-Teacher Meeting", "MEETING", "2026-09-12", "2026-09-12", false, "Discussion on student academic progress and attendance review."));
+        events.add(new AcademicEvent("2026-2027", "Quarterly Examination", "EXAM_PERIOD", "2026-09-22", "2026-09-30", false, "First term evaluation assessments across grades 6 to 10."));
+        events.add(new AcademicEvent("2026-2027", "Science Exhibition", "EVENT", "2026-10-16", "2026-10-17", false, "Inter-class science model display, robotics demos, and innovation fair."));
+        events.add(new AcademicEvent("2026-2027", "Annual Sports Day", "EVENT", "2026-11-20", "2026-11-21", false, "Track and field events, march-past, and inter-house athletic meets."));
+        events.add(new AcademicEvent("2026-2027", "School Annual Day", "EVENT", "2026-12-18", "2026-12-18", false, "Grand cultural gala, drama, music, and academic prize distributions."));
 
         academicEventRepository.saveAll(events);
     }

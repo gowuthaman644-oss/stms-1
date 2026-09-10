@@ -66,6 +66,9 @@ public class AcademicEventController {
         if (event.getStartDate() == null || event.getStartDate().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Start date is required"));
         }
+        if (event.getEndDate() != null && !event.getEndDate().trim().isEmpty() && event.getStartDate().compareTo(event.getEndDate()) > 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Start date cannot be after end date"));
+        }
 
         AcademicEvent saved = academicEventRepository.save(event);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
@@ -94,6 +97,10 @@ public class AcademicEventController {
         Optional<AcademicEvent> opt = academicEventRepository.findById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.notFound().build();
+        }
+
+        if (updated.getStartDate() != null && updated.getEndDate() != null && updated.getStartDate().compareTo(updated.getEndDate()) > 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Start date cannot be after end date"));
         }
 
         AcademicEvent existing = opt.get();
