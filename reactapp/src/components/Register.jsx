@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { User, Mail, KeyRound, Shield } from "lucide-react";
+import { API_URL } from "../services/scheduleService";
 
 function Register() {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ function Register() {
     username: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "STUDENT",
   });
 
@@ -26,7 +28,7 @@ function Register() {
     e.preventDefault();
     setError("");
 
-    if (!formData.fullName.trim() || !formData.username.trim() || !formData.email.trim() || !formData.password.trim()) {
+    if (!formData.fullName.trim() || !formData.username.trim() || !formData.email.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
       setError("Please enter all required fields.");
       return;
     }
@@ -36,10 +38,15 @@ function Register() {
       return;
     }
 
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8080/auth/register", {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,6 +151,21 @@ function Register() {
             name="password"
             placeholder="Minimum 6 characters"
             value={formData.password}
+            onChange={handleChange}
+            required
+            minLength={6}
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <KeyRound size={14} color="var(--sage-primary)" /> Confirm Password
+          </label>
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Re-enter your password"
+            value={formData.confirmPassword}
             onChange={handleChange}
             required
             minLength={6}

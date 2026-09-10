@@ -76,7 +76,7 @@ function TeacherPortal() {
         subject: activeSession.subject,
         teacherName: activeSession.teacherName || (currentUser ? currentUser.fullName : "Prof. Clara Evans"),
         studentName: attendanceForm.studentName,
-        studentId: "STU1024",
+        studentId: attendanceForm.studentName === "Alex Rivera" ? "STU1024" : attendanceForm.studentName.toLowerCase().replace(/\s+/g, ""),
         date: attendanceForm.date || new Date().toISOString().split("T")[0],
         status: attendanceForm.status,
         remarks: attendanceForm.remarks,

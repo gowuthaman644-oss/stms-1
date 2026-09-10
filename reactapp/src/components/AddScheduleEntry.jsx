@@ -164,6 +164,11 @@ function AddScheduleEntry() {
       return;
     }
 
+    if (formData.startTime && formData.endTime && formData.startTime.trim() >= formData.endTime.trim()) {
+      setError("End time must be later than start time.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {

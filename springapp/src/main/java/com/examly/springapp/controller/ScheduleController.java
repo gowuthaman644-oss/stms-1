@@ -49,19 +49,24 @@ public class ScheduleController {
         if (scheduleEntry.getSubject() == null || scheduleEntry.getSubject().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Subject is required"));
         }
+        if (scheduleEntry.getStartTime() != null && scheduleEntry.getEndTime() != null
+                && !scheduleEntry.getStartTime().trim().isEmpty() && !scheduleEntry.getEndTime().trim().isEmpty()
+                && scheduleEntry.getStartTime().trim().compareTo(scheduleEntry.getEndTime().trim()) >= 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "End time must be later than start time"));
+        }
 
         // Conflict Detection: Check Teacher & Room Availability
         List<ScheduleEntry> existingList = scheduleService.getAllSchedules();
         for (ScheduleEntry ex : existingList) {
             boolean sameDay = ex.getDayOfWeek() != null && ex.getDayOfWeek().equalsIgnoreCase(scheduleEntry.getDayOfWeek());
-            boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
+            boolean overlaps = sameDay && isTimeOverlapping(ex.getStartTime(), ex.getEndTime(), scheduleEntry.getStartTime(), scheduleEntry.getEndTime());
 
-            if (sameDay && sameTime) {
+            if (overlaps) {
                 // Class conflict
                 if (ex.getClassName() != null && scheduleEntry.getClassName() != null
                         && ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName().trim())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
                 // Teacher conflict
@@ -70,17 +75,17 @@ public class ScheduleController {
                         && ex.getTeacherName().equalsIgnoreCase(scheduleEntry.getTeacherName().trim())
                         && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
                 // Room conflict (if attendanceNote / room specifies facility)
                 if (ex.getAttendanceNote() != null && scheduleEntry.getAttendanceNote() != null
                         && !ex.getAttendanceNote().trim().isEmpty()
-                        && ex.getAttendanceNote().toLowerCase().contains("room")
-                        && ex.getAttendanceNote().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
+                        && !isGenericAttendanceNote(ex.getAttendanceNote())
+                        && ex.getAttendanceNote().trim().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
                         && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by Class " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
             }
@@ -147,19 +152,25 @@ public class ScheduleController {
             }
         }
 
+        if (scheduleEntry.getStartTime() != null && scheduleEntry.getEndTime() != null
+                && !scheduleEntry.getStartTime().trim().isEmpty() && !scheduleEntry.getEndTime().trim().isEmpty()
+                && scheduleEntry.getStartTime().trim().compareTo(scheduleEntry.getEndTime().trim()) >= 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "End time must be later than start time"));
+        }
+
         // Conflict Detection: Check Teacher & Room Availability for update
         List<ScheduleEntry> existingList = scheduleService.getAllSchedules();
         for (ScheduleEntry ex : existingList) {
             if (ex.getId() != null && ex.getId().equals(id)) continue;
             boolean sameDay = ex.getDayOfWeek() != null && ex.getDayOfWeek().equalsIgnoreCase(scheduleEntry.getDayOfWeek());
-            boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
+            boolean overlaps = sameDay && isTimeOverlapping(ex.getStartTime(), ex.getEndTime(), scheduleEntry.getStartTime(), scheduleEntry.getEndTime());
 
-            if (sameDay && sameTime) {
+            if (overlaps) {
                 // Class conflict
                 if (ex.getClassName() != null && scheduleEntry.getClassName() != null
                         && ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName().trim())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
                 // Teacher conflict
@@ -168,17 +179,17 @@ public class ScheduleController {
                         && ex.getTeacherName().equalsIgnoreCase(scheduleEntry.getTeacherName().trim())
                         && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
                 // Room conflict (if attendanceNote / room specifies facility)
                 if (ex.getAttendanceNote() != null && scheduleEntry.getAttendanceNote() != null
                         && !ex.getAttendanceNote().trim().isEmpty()
-                        && ex.getAttendanceNote().toLowerCase().contains("room")
-                        && ex.getAttendanceNote().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
+                        && !isGenericAttendanceNote(ex.getAttendanceNote())
+                        && ex.getAttendanceNote().trim().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
                         && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
-                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by Class " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " (" + ex.getStartTime() + " - " + ex.getEndTime() + ")"
                     ));
                 }
             }
@@ -218,5 +229,25 @@ public class ScheduleController {
 
         scheduleService.deleteSchedule(id);
         return ResponseEntity.ok(Map.of("message", "Schedule entry deleted successfully"));
+    }
+
+    private boolean isTimeOverlapping(String start1, String end1, String start2, String end2) {
+        if (start1 == null || start2 == null) return false;
+        start1 = start1.trim();
+        start2 = start2.trim();
+        if (end1 == null || end1.trim().isEmpty() || end2 == null || end2.trim().isEmpty()) {
+            return start1.equalsIgnoreCase(start2);
+        }
+        end1 = end1.trim();
+        end2 = end2.trim();
+        // Overlap condition: start1 < end2 && start2 < end1
+        return start1.compareTo(end2) < 0 && start2.compareTo(end1) < 0;
+    }
+
+    private boolean isGenericAttendanceNote(String note) {
+        if (note == null) return true;
+        String n = note.trim().toLowerCase();
+        return n.equals("present") || n.equals("absent") || n.equals("late") || n.equals("excused")
+                || n.equals("special lecture") || n.equals("substitute") || n.equals("exam period");
     }
 }

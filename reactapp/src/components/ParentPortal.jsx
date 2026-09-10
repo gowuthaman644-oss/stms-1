@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, Clock, Calendar, AlertCircle } from "lucide-react";
-import { getAllSchedules, getParentChildren } from "../services/scheduleService";
+import { getAllSchedules, getParentChildren, getAttendanceByStudent } from "../services/scheduleService";
 import { useAuth } from "../context/AuthContext";
 
 function ParentPortal() {
@@ -11,6 +11,7 @@ function ParentPortal() {
   const [childrenList, setChildrenList] = useState([]);
   const [selectedChildIndex, setSelectedChildIndex] = useState(0);
   const [schedules, setSchedules] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -23,7 +24,7 @@ function ParentPortal() {
           const childrenData = await getParentChildren();
           if (Array.isArray(childrenData) && childrenData.length > 0) {
             setChildrenList(childrenData);
-          } else if (currentUser) {
+          } else if (currentUser && currentUser.linkedStudentUsername) {
             setChildrenList([
               {
                 fullName: currentUser.linkedStudentName || "Alex Rivera",
@@ -31,9 +32,11 @@ function ParentPortal() {
                 className: currentUser.linkedStudentClass || "10-A",
               },
             ]);
+          } else {
+            setChildrenList([]);
           }
         } catch (e) {
-          if (currentUser) {
+          if (currentUser && currentUser.linkedStudentUsername) {
             setChildrenList([
               {
                 fullName: currentUser.linkedStudentName || "Alex Rivera",
@@ -41,6 +44,8 @@ function ParentPortal() {
                 className: currentUser.linkedStudentClass || "10-A",
               },
             ]);
+          } else {
+            setChildrenList([]);
           }
         }
 
@@ -57,17 +62,44 @@ function ParentPortal() {
     fetchData();
   }, [currentUser]);
 
-  const activeChild = childrenList[selectedChildIndex] || {
-    fullName: currentUser?.linkedStudentName || "Alex Rivera",
-    className: currentUser?.linkedStudentClass || "10-A",
-  };
+  const activeChild = childrenList[selectedChildIndex] || null;
 
-  const childClass = activeChild.className || "10-A";
-  const childName = activeChild.fullName || "Your Student";
+  useEffect(() => {
+    if (!activeChild) {
+      setAttendanceRecords([]);
+      return;
+    }
+
+    const loadChildAttendance = async () => {
+      try {
+        const studentQuery = activeChild.studentId || activeChild.fullName || activeChild.username;
+        if (studentQuery) {
+          const att = await getAttendanceByStudent(studentQuery);
+          setAttendanceRecords(Array.isArray(att) ? att : []);
+        } else {
+          setAttendanceRecords([]);
+        }
+      } catch (err) {
+        setAttendanceRecords([]);
+      }
+    };
+
+    loadChildAttendance();
+  }, [activeChild]);
+
+  const childClass = activeChild?.className || "10-A";
+  const childName = activeChild?.fullName || "Your Student";
 
   const childSchedules = schedules.filter(
     (s) => (s.className || "").toLowerCase() === childClass.toLowerCase()
   );
+
+  const presentCount = attendanceRecords.filter((a) => a.status === "PRESENT").length;
+  const attendanceNum = attendanceRecords.length > 0
+    ? (presentCount / attendanceRecords.length) * 100
+    : 100.0;
+  const attendanceRate = attendanceNum.toFixed(1) + "%";
+  const isBelow75 = attendanceRecords.length > 0 && attendanceNum < 75.0;
 
   return (
     <motion.div
@@ -86,7 +118,9 @@ function ParentPortal() {
             Parent / Guardian Schedule Portal
           </h2>
           <p className="header-subtitle">
-            Academic schedule and timetable monitoring for <strong>{childName}</strong> (Class {childClass}).
+            {childrenList.length > 0
+              ? `Academic schedule and timetable monitoring for ${childName} (Class ${childClass}).`
+              : "Monitor your linked students' academic timetables and attendance."}
           </p>
         </div>
 
@@ -123,32 +157,57 @@ function ParentPortal() {
         </div>
       )}
 
+      {childrenList.length > 0 && isBelow75 && (
+        <div
+          style={{
+            background: "#fffbeb",
+            border: "1px solid #fef3c7",
+            color: "#92400e",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            fontSize: "13px",
+          }}
+        >
+          <span>
+            ⚠️ Attendance Alert: {childName}'s attendance is {attendanceRate} (below 75% minimum academic requirement).
+          </span>
+        </div>
+      )}
+
       {/* Parent Overview Cards */}
-      <div className="stats-bar" style={{ marginBottom: "28px" }}>
-        <div className="stat-card">
-          <div className="stat-icon">👦</div>
-          <div className="stat-info">
-            <span className="stat-value">{childName}</span>
-            <span className="stat-label">Enrolled • Class {childClass}</span>
+      {childrenList.length > 0 && (
+        <div className="stats-bar" style={{ marginBottom: "28px" }}>
+          <div className="stat-card">
+            <div className="stat-icon">👦</div>
+            <div className="stat-info">
+              <span className="stat-value">{childName}</span>
+              <span className="stat-label">Enrolled • Class {childClass}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-info">
-            <span className="stat-value">{childSchedules.length} Sessions</span>
-            <span className="stat-label">Weekly Curriculum</span>
+          <div className="stat-card">
+            <div className="stat-icon">📅</div>
+            <div className="stat-info">
+              <span className="stat-value">{childSchedules.length} Sessions</span>
+              <span className="stat-label">Weekly Curriculum</span>
+            </div>
           </div>
-        </div>
 
-        <div className="stat-card">
-          <div className="stat-icon">✅</div>
-          <div className="stat-info">
-            <span className="stat-value">Good Standing</span>
-            <span className="stat-label">Verified Status</span>
+          <div className="stat-card">
+            <div className="stat-icon">📊</div>
+            <div className="stat-info">
+              <span className="stat-value" style={{ color: isBelow75 ? "var(--danger)" : "inherit" }}>
+                {attendanceRate}
+              </span>
+              <span className="stat-label">Verified Attendance</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Child Class Schedule */}
       <h3 style={{ margin: "0 0 16px", fontFamily: "var(--font-serif)" }}>
