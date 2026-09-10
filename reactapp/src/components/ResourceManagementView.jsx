@@ -39,8 +39,9 @@ function ResourceManagementView() {
 
   const handleToggleBooking = async (room) => {
     setError("");
+    const available = room.isAvailable !== undefined ? room.isAvailable : room.available;
     try {
-      if (room.isAvailable) {
+      if (available) {
         await bookResource(room.id);
         setFeedback(`Facility ${room.roomNumber} successfully booked.`);
       } else {
@@ -194,7 +195,7 @@ function ResourceManagementView() {
                     </h3>
                     <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{room.buildingName}</span>
                   </div>
-                  {room.isAvailable ? (
+                  {(room.isAvailable !== undefined ? room.isAvailable : room.available) ? (
                     <span className="badge badge-present" style={{ display: "flex", alignItems: "center", gap: 4 }}>
                       <CheckCircle2 size={12} /> Available
                     </span>
@@ -227,13 +228,13 @@ function ResourceManagementView() {
                       borderRadius: 6,
                       fontSize: "12px",
                       fontWeight: "600",
-                      background: room.isAvailable ? "var(--sage-primary)" : "var(--sage-subtle)",
-                      color: room.isAvailable ? "#ffffff" : "var(--text-dark)",
+                      background: (room.isAvailable !== undefined ? room.isAvailable : room.available) ? "var(--sage-primary)" : "var(--sage-subtle)",
+                      color: (room.isAvailable !== undefined ? room.isAvailable : room.available) ? "#ffffff" : "var(--text-dark)",
                       border: "1px solid var(--sage-border)",
                       cursor: "pointer",
                     }}
                   >
-                    {room.isAvailable ? "Book Room" : "Release Room"}
+                    {(room.isAvailable !== undefined ? room.isAvailable : room.available) ? "Book Room" : "Release Room"}
                   </button>
                 )}
 

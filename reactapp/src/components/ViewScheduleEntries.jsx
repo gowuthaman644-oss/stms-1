@@ -38,6 +38,11 @@ function ViewScheduleEntries() {
   }, []);
 
   const handleDelete = async (id) => {
+    if (typeof window !== "undefined" && typeof window.confirm === "function") {
+      const confirmed = window.confirm("Are you sure you want to delete this schedule entry?");
+      if (confirmed === false) return;
+    }
+
     try {
       setError("");
       await deleteSchedule(id);

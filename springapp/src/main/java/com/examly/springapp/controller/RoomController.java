@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/resources")
+@RequestMapping({"/api/resources", "/api/rooms"})
 @CrossOrigin(origins = "*")
 public class RoomController {
 

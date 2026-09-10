@@ -50,6 +50,35 @@ public class ScheduleController {
             return ResponseEntity.badRequest().body(Map.of("message", "Subject is required"));
         }
 
+        // Conflict Detection: Check Teacher & Room Availability
+        List<ScheduleEntry> existingList = scheduleService.getAllSchedules();
+        for (ScheduleEntry ex : existingList) {
+            boolean sameDay = ex.getDayOfWeek() != null && ex.getDayOfWeek().equalsIgnoreCase(scheduleEntry.getDayOfWeek());
+            boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
+
+            if (sameDay && sameTime) {
+                // Teacher conflict
+                if (ex.getTeacherName() != null && scheduleEntry.getTeacherName() != null 
+                        && !ex.getTeacherName().trim().isEmpty() 
+                        && ex.getTeacherName().equalsIgnoreCase(scheduleEntry.getTeacherName().trim())
+                        && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
+                // Room conflict (if attendanceNote / room specifies facility)
+                if (ex.getAttendanceNote() != null && scheduleEntry.getAttendanceNote() != null
+                        && !ex.getAttendanceNote().trim().isEmpty()
+                        && ex.getAttendanceNote().toLowerCase().contains("room")
+                        && ex.getAttendanceNote().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
+                        && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
+            }
+        }
+
         ScheduleEntry saved = scheduleService.addSchedule(scheduleEntry);
         return ResponseEntity.ok(saved);
     }
@@ -108,6 +137,36 @@ public class ScheduleController {
             if (role != null && !role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("SYSTEM_ADMIN") && !role.equalsIgnoreCase("TEACHER")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Access denied: Only teachers and administrators can modify timetable entries"));
+            }
+        }
+
+        // Conflict Detection: Check Teacher & Room Availability for update
+        List<ScheduleEntry> existingList = scheduleService.getAllSchedules();
+        for (ScheduleEntry ex : existingList) {
+            if (ex.getId() != null && ex.getId().equals(id)) continue;
+            boolean sameDay = ex.getDayOfWeek() != null && ex.getDayOfWeek().equalsIgnoreCase(scheduleEntry.getDayOfWeek());
+            boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
+
+            if (sameDay && sameTime) {
+                // Teacher conflict
+                if (ex.getTeacherName() != null && scheduleEntry.getTeacherName() != null 
+                        && !ex.getTeacherName().trim().isEmpty() 
+                        && ex.getTeacherName().equalsIgnoreCase(scheduleEntry.getTeacherName().trim())
+                        && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Teacher conflict: " + scheduleEntry.getTeacherName() + " is already assigned to " + ex.getClassName() + " (" + ex.getSubject() + ") on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
+                // Room conflict (if attendanceNote / room specifies facility)
+                if (ex.getAttendanceNote() != null && scheduleEntry.getAttendanceNote() != null
+                        && !ex.getAttendanceNote().trim().isEmpty()
+                        && ex.getAttendanceNote().toLowerCase().contains("room")
+                        && ex.getAttendanceNote().equalsIgnoreCase(scheduleEntry.getAttendanceNote().trim())
+                        && !ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Facility conflict: " + scheduleEntry.getAttendanceNote() + " is already in use by " + ex.getClassName() + " on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
             }
         }
 
