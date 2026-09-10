@@ -16,6 +16,7 @@ function ViewScheduleEntries() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDay, setSelectedDay] = useState("all");
   const [selectedClass, setSelectedClass] = useState("all");
+  const [selectedTeacher, setSelectedTeacher] = useState("all");
 
   const loadSchedules = async () => {
     try {
@@ -83,9 +84,13 @@ function ViewScheduleEntries() {
         selectedClass === "all" ||
         cls === selectedClass.toLowerCase();
 
-      return matchesSearch && matchesDay && matchesClass;
+      const matchesTeacher =
+        selectedTeacher === "all" ||
+        teacher === selectedTeacher.toLowerCase();
+
+      return matchesSearch && matchesDay && matchesClass && matchesTeacher;
     });
-  }, [schedules, searchTerm, selectedDay, selectedClass]);
+  }, [schedules, searchTerm, selectedDay, selectedClass, selectedTeacher]);
 
   // Unique classes for filter dropdown
   const uniqueClasses = useMemo(() => {
@@ -94,6 +99,23 @@ function ViewScheduleEntries() {
       .filter((c) => Boolean(c && c.trim()));
     return Array.from(new Set(list));
   }, [schedules]);
+
+  // Unique teachers for filter dropdown
+  const uniqueTeachers = useMemo(() => {
+    const list = schedules
+      .map((s) => s.teacherName)
+      .filter((t) => Boolean(t && t.trim()));
+    return Array.from(new Set(list));
+  }, [schedules]);
+
+  const isFiltered = searchTerm !== "" || selectedDay !== "all" || selectedClass !== "all" || selectedTeacher !== "all";
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedDay("all");
+    setSelectedClass("all");
+    setSelectedTeacher("all");
+  };
 
   // Days list for Matrix view
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -247,6 +269,40 @@ function ViewScheduleEntries() {
                   </option>
                 ))}
               </select>
+            )}
+
+            {uniqueTeachers.length > 0 && (
+              <select
+                className="filter-select"
+                value={selectedTeacher}
+                onChange={(e) => setSelectedTeacher(e.target.value)}
+              >
+                <option value="all">All Teachers</option>
+                {uniqueTeachers.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {isFiltered && (
+              <button
+                type="button"
+                className="btn-action-neutral"
+                onClick={clearFilters}
+                style={{
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--sage-border)",
+                  background: "#ffffff",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                }}
+              >
+                ✕ Clear
+              </button>
             )}
           </div>
 

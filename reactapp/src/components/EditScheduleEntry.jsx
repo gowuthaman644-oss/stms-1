@@ -64,15 +64,26 @@ function EditScheduleEntry() {
     setFormData((prev) => ({ ...prev, attendanceNote: note }));
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
+    if (!formData.className || !formData.className.trim() || !formData.subject || !formData.subject.trim()) {
+      setError("Please fill in required fields: Class Name and Subject.");
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       await updateSchedule(id, formData);
       navigate("/view-schedule");
     } catch (err) {
       setError(err.message || "Failed to update schedule entry");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -197,7 +208,9 @@ function EditScheduleEntry() {
         </div>
 
         <div className="form-actions">
-          <button type="submit">Update Entry</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Saving..." : "Update Entry"}
+          </button>
 
           <button
             type="button"

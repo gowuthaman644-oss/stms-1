@@ -58,6 +58,7 @@ function TeacherPortal() {
     setAttendanceForm({
       status: "PRESENT",
       studentName: "Alex Rivera",
+      date: new Date().toISOString().split("T")[0],
       remarks: `Class ${session.className} ${session.subject} session attendance.`,
     });
   };
@@ -76,13 +77,13 @@ function TeacherPortal() {
         teacherName: activeSession.teacherName || (currentUser ? currentUser.fullName : "Prof. Clara Evans"),
         studentName: attendanceForm.studentName,
         studentId: "STU1024",
-        date: new Date().toISOString().split("T")[0],
+        date: attendanceForm.date || new Date().toISOString().split("T")[0],
         status: attendanceForm.status,
         remarks: attendanceForm.remarks,
       };
 
       await markAttendance(payload);
-      setAttendanceFeedback(`Attendance successfully persisted for ${activeSession.subject} (Class ${activeSession.className}).`);
+      setAttendanceFeedback(`Attendance successfully recorded for ${activeSession.subject} (Class ${activeSession.className}).`);
       setActiveSession(null);
       setTimeout(() => setAttendanceFeedback(""), 4000);
     } catch (err) {
@@ -290,6 +291,19 @@ function TeacherPortal() {
                   type="text"
                   value={attendanceForm.studentName}
                   onChange={(e) => setAttendanceForm({ ...attendanceForm, studentName: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
+                  required
+                />
+              </div>
+
+              <div style={{ marginBottom: "16px" }}>
+                <label className="form-label" style={{ display: "block", marginBottom: 6, fontWeight: 600, fontSize: 13 }}>
+                  Attendance Date
+                </label>
+                <input
+                  type="date"
+                  value={attendanceForm.date}
+                  onChange={(e) => setAttendanceForm({ ...attendanceForm, date: e.target.value })}
                   style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
                   required
                 />

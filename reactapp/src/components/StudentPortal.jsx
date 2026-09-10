@@ -60,9 +60,11 @@ function StudentPortal() {
   );
 
   const presentCount = attendanceRecords.filter((a) => a.status === "PRESENT").length;
-  const attendanceRate = attendanceRecords.length > 0 
-    ? ((presentCount / attendanceRecords.length) * 100).toFixed(1) + "%" 
-    : "100.0%";
+  const attendanceNum = attendanceRecords.length > 0 
+    ? (presentCount / attendanceRecords.length) * 100 
+    : 100.0;
+  const attendanceRate = attendanceNum.toFixed(1) + "%";
+  const isBelow75 = attendanceRecords.length > 0 && attendanceNum < 75.0;
 
   return (
     <motion.div
@@ -104,6 +106,12 @@ function StudentPortal() {
         </div>
       )}
 
+      {isBelow75 && (
+        <div style={{ background: "#fffbeb", border: "1px solid #fef3c7", color: "#92400e", padding: "10px 16px", borderRadius: "8px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px", fontSize: "13px" }}>
+          <span>⚠️ Attendance: {attendanceRate} — Attendance is below 75% minimum academic requirement.</span>
+        </div>
+      )}
+
       {/* Student Metrics */}
       <div className="stats-bar" style={{ marginBottom: "28px" }}>
         <div className="stat-card">
@@ -125,7 +133,7 @@ function StudentPortal() {
         <div className="stat-card">
           <div className="stat-icon">✨</div>
           <div className="stat-info">
-            <span className="stat-value">{attendanceRate}</span>
+            <span className="stat-value" style={{ color: isBelow75 ? "var(--danger)" : "inherit" }}>{attendanceRate}</span>
             <span className="stat-label">Verified Attendance</span>
           </div>
         </div>

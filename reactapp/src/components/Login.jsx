@@ -17,18 +17,27 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!username.trim() || !password.trim()) {
+      setError("Please enter all required fields.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("http://localhost:8080/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username: username.trim(), password: password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 401) {
+          throw new Error("Invalid username or password.");
+        }
         throw new Error(data.message || "Invalid credentials");
       }
 
@@ -49,7 +58,7 @@ function Login() {
         navigate("/view-schedule");
       }
     } catch (err) {
-      setError(err.message || "Login failed. Please verify credentials.");
+      setError(err.message || "Invalid username or password.");
     } finally {
       setLoading(false);
     }

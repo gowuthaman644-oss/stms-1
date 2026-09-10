@@ -43,15 +43,20 @@ function ResourceManagementView() {
     try {
       if (available) {
         await bookResource(room.id);
-        setFeedback(`Facility ${room.roomNumber} successfully booked.`);
+        setFeedback("Room booked successfully.");
       } else {
         await releaseResource(room.id);
-        setFeedback(`Facility ${room.roomNumber} released and marked available.`);
+        setFeedback("Room released and marked available.");
       }
       await loadRooms();
       setTimeout(() => setFeedback(""), 3500);
     } catch (err) {
-      setError(err.message || "Failed to update facility booking status");
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes("occupied") || msg.toLowerCase().includes("conflict") || msg.toLowerCase().includes("already")) {
+        setError("Room is already booked for this time.");
+      } else {
+        setError(msg || "Failed to update room booking status");
+      }
     }
   };
 

@@ -157,6 +157,12 @@ function ParentPortal() {
 
       {loading ? (
         <p>Loading timetable for {childName}...</p>
+      ) : childrenList.length === 0 ? (
+        <div style={{ background: "#ffffff", padding: 24, borderRadius: "var(--radius-md)", border: "1px solid var(--sage-border)" }}>
+          <p style={{ margin: 0, color: "var(--text-muted)" }}>
+            No child is currently linked to this account.
+          </p>
+        </div>
       ) : childSchedules.length === 0 ? (
         <div style={{ background: "#ffffff", padding: 24, borderRadius: "var(--radius-md)", border: "1px solid var(--sage-border)" }}>
           <p style={{ margin: 0, color: "var(--text-muted)" }}>

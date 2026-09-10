@@ -57,6 +57,13 @@ public class ScheduleController {
             boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
 
             if (sameDay && sameTime) {
+                // Class conflict
+                if (ex.getClassName() != null && scheduleEntry.getClassName() != null
+                        && ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName().trim())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
                 // Teacher conflict
                 if (ex.getTeacherName() != null && scheduleEntry.getTeacherName() != null 
                         && !ex.getTeacherName().trim().isEmpty() 
@@ -148,6 +155,13 @@ public class ScheduleController {
             boolean sameTime = ex.getStartTime() != null && ex.getStartTime().equalsIgnoreCase(scheduleEntry.getStartTime());
 
             if (sameDay && sameTime) {
+                // Class conflict
+                if (ex.getClassName() != null && scheduleEntry.getClassName() != null
+                        && ex.getClassName().equalsIgnoreCase(scheduleEntry.getClassName().trim())) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "message", "Class conflict: Class " + scheduleEntry.getClassName() + " already has a timetable entry for this period on " + scheduleEntry.getDayOfWeek() + " at " + scheduleEntry.getStartTime()
+                    ));
+                }
                 // Teacher conflict
                 if (ex.getTeacherName() != null && scheduleEntry.getTeacherName() != null 
                         && !ex.getTeacherName().trim().isEmpty() 

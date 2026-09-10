@@ -41,7 +41,18 @@ function AcademicCalendarView() {
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
-    if (!newEvent.eventName.trim()) return;
+    if (!newEvent.eventName.trim()) {
+      setError("Please enter an event name.");
+      return;
+    }
+    if (!newEvent.startDate || !newEvent.endDate) {
+      setError("Please select both start and end dates.");
+      return;
+    }
+    if (newEvent.startDate > newEvent.endDate) {
+      setError("Start date cannot be after end date.");
+      return;
+    }
 
     setSubmitting(true);
     setError("");
@@ -52,7 +63,7 @@ function AcademicCalendarView() {
         isHoliday: newEvent.eventType === "HOLIDAY",
       };
       await createCalendarEvent(payload);
-      setFeedback("Calendar event added and saved to database successfully.");
+      setFeedback("Event added successfully.");
       setShowAdd(false);
       setNewEvent({
         academicYear: "2026-2027",
@@ -82,7 +93,7 @@ function AcademicCalendarView() {
       setError("");
       await deleteCalendarEvent(id);
       setEvents((prev) => prev.filter((ev) => ev.id !== id));
-      setFeedback("Calendar event deleted from database.");
+      setFeedback("Event deleted successfully.");
       setTimeout(() => setFeedback(""), 3500);
     } catch (err) {
       setError(err.message || "Failed to delete calendar event");

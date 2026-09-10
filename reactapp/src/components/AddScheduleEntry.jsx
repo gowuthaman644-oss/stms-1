@@ -46,15 +46,26 @@ function AddScheduleEntry() {
     });
   };
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
+
+    if (!formData.className || !formData.className.trim() || !formData.subject || !formData.subject.trim()) {
+      setError("Please fill in required fields: Class Name and Subject.");
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       await addSchedule(formData);
       navigate("/view-schedule");
     } catch (err) {
       setError(err.message || "Failed to add schedule entry");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -185,11 +196,13 @@ function AddScheduleEntry() {
         </div>
 
         <div className="form-actions">
-          <button type="submit">Add Entry</button>
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Saving..." : "Add Entry"}
+          </button>
 
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/view-schedule")}
           >
             Cancel
           </button>

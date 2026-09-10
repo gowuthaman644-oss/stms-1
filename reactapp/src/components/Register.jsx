@@ -25,13 +25,30 @@ function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!formData.fullName.trim() || !formData.username.trim() || !formData.email.trim() || !formData.password.trim()) {
+      setError("Please enter all required fields.");
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("http://localhost:8080/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          fullName: formData.fullName.trim(),
+          username: formData.username.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          role: formData.role,
+        }),
       });
 
       const data = await res.json();
