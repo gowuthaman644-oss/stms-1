@@ -100,13 +100,20 @@ public class UserController {
         UserAccount parent = parentOpt.get();
         String studentUsername = parent.getLinkedStudentUsername();
 
-        Map<String, Object> childInfo = new HashMap<>();
         if (studentUsername != null && !studentUsername.trim().isEmpty()) {
-            Optional<UserAccount> studentOpt = userAccountRepository.findByUsername(studentUsername);
-            if (studentOpt.isPresent()) {
-                childInfo.put("found", true);
-                childInfo.put("student", buildUserDto(studentOpt.get()));
-                return ResponseEntity.ok(List.of(childInfo.get("student")));
+            String[] uNames = studentUsername.split(",");
+            List<Map<String, Object>> foundChildren = new java.util.ArrayList<>();
+            for (String u : uNames) {
+                String trimmed = u.trim();
+                if (!trimmed.isEmpty()) {
+                    Optional<UserAccount> studentOpt = userAccountRepository.findByUsername(trimmed);
+                    if (studentOpt.isPresent()) {
+                        foundChildren.add(buildUserDto(studentOpt.get()));
+                    }
+                }
+            }
+            if (!foundChildren.isEmpty()) {
+                return ResponseEntity.ok(foundChildren);
             }
         }
 

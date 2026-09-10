@@ -25,25 +25,6 @@ public class RoomController {
         this.jwtUtil = jwtUtil;
     }
 
-    @PostConstruct
-    public void seedInitialRooms() {
-        if (roomRepository.count() == 0) {
-            roomRepository.save(new Room("Room 101", "Main Academic Block", 40, "Classroom", "Smartboard, 4K Projector"));
-            
-            Room lab = new Room("Science Lab 204", "Science Pavilion", 32, "Laboratory", "Microscopes, Chemical Hoods");
-            lab.setAvailable(false);
-            roomRepository.save(lab);
-
-            roomRepository.save(new Room("Comp Lab 302", "Technology Wing", 35, "Computer Lab", "35 High-spec PCs, Gigabit LAN"));
-            roomRepository.save(new Room("Seminar Hall A", "Library Complex", 120, "Auditorium", "Dual Projectors, Audio System"));
-            
-            Room underMaint = new Room("Room 105", "Main Academic Block", 30, "Classroom", "Projector, Whiteboard");
-            underMaint.setAvailable(false);
-            underMaint.setMaintenanceStatus("UNDER_MAINTENANCE");
-            roomRepository.save(underMaint);
-        }
-    }
-
     @GetMapping
     public ResponseEntity<?> getAllRooms(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {

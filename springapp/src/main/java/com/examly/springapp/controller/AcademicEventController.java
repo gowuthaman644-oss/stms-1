@@ -25,17 +25,6 @@ public class AcademicEventController {
         this.jwtUtil = jwtUtil;
     }
 
-    @PostConstruct
-    public void seedInitialEvents() {
-        if (academicEventRepository.count() == 0) {
-            academicEventRepository.save(new AcademicEvent("2026-2027", "Fall Semester Orientation", "TERM_START", "2026-09-01", "2026-09-05", false, "Welcome week for all incoming students and teacher briefings."));
-            academicEventRepository.save(new AcademicEvent("2026-2027", "Mid-Term Examination Period", "EXAM_PERIOD", "2026-10-15", "2026-10-22", false, "Special examination timetable active campus-wide."));
-            academicEventRepository.save(new AcademicEvent("2026-2027", "Autumn Break & National Holiday", "HOLIDAY", "2026-11-02", "2026-11-06", true, "School closed. Regular classes suspended."));
-            academicEventRepository.save(new AcademicEvent("2026-2027", "Winter Final Assessments", "EXAM_PERIOD", "2026-12-14", "2026-12-22", false, "Semester end practicals and theory evaluations."));
-            academicEventRepository.save(new AcademicEvent("2026-2027", "Winter Vacation", "HOLIDAY", "2026-12-23", "2027-01-08", true, "Campus winter break. Administrative offices open on reduced hours."));
-        }
-    }
-
     @GetMapping
     public ResponseEntity<?> getAllEvents(
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
