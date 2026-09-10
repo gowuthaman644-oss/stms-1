@@ -51,6 +51,17 @@ function Navbar() {
             <span>Home</span>
           </Link>
 
+          {!isAuthenticated && (
+            <>
+              <a href="/#features" className="nav-link">
+                <span>Features</span>
+              </a>
+              <a href="/#how-it-works" className="nav-link">
+                <span>How It Works</span>
+              </a>
+            </>
+          )}
+
           {isAuthenticated && (
             <Link
               to="/view-schedule"
@@ -227,7 +238,7 @@ function Navbar() {
                   color: "#ffffff",
                 }}
               >
-                Register
+                Get Started
               </Link>
             </div>
           )}
