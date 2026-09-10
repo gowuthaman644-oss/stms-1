@@ -7,32 +7,61 @@ import {
   Building2,
   Calendar,
   Sparkles,
+  PlusCircle,
+  AlertCircle,
 } from "lucide-react";
-import { getAllSchedules } from "../services/scheduleService";
+import { getAllSchedules, getResources, getCalendarEvents, getAllUsers } from "../services/scheduleService";
 
 function AdminDashboard() {
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
+  const [roomsCount, setRoomsCount] = useState(5);
+  const [eventsCount, setEventsCount] = useState(5);
+  const [usersList, setUsersList] = useState([
+    { fullName: "Dr. Arthur Vance", email: "admin@stms.edu", role: "System Administrator", status: "Active" },
+    { fullName: "Prof. Clara Evans", email: "c.evans@stms.edu", role: "Teacher (Science)", status: "Active" },
+    { fullName: "Mr. John Smith", email: "j.smith@stms.edu", role: "Teacher (Math)", status: "Active" },
+    { fullName: "Alex Rivera", email: "a.rivera@student.stms.edu", role: "Student (10-A)", status: "Active" },
+    { fullName: "Sarah Rivera", email: "s.rivera@parent.stms.edu", role: "Parent / Guardian", status: "Active" },
+  ]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAllSchedules();
-        setSchedules(Array.isArray(data) ? data : data.data || []);
+        setError("");
+        const [schedRes, roomRes, eventRes, userRes] = await Promise.allSettled([
+          getAllSchedules(),
+          getResources(),
+          getCalendarEvents(),
+          getAllUsers(),
+        ]);
+
+        if (schedRes.status === "fulfilled") {
+          const list = Array.isArray(schedRes.value) ? schedRes.value : schedRes.value.data || [];
+          setSchedules(list);
+        }
+        if (roomRes.status === "fulfilled" && Array.isArray(roomRes.value)) {
+          setRoomsCount(roomRes.value.length);
+        }
+        if (eventRes.status === "fulfilled" && Array.isArray(eventRes.value)) {
+          setEventsCount(eventRes.value.length);
+        }
+        if (userRes.status === "fulfilled" && Array.isArray(userRes.value) && userRes.value.length > 0) {
+          setUsersList(userRes.value.map((u) => ({
+            fullName: u.fullName || u.username,
+            email: u.email || `${u.username}@stms.edu`,
+            role: u.role,
+            status: u.isActive !== false ? "Active" : "Inactive",
+          })));
+        }
       } catch (err) {
-        console.error("Admin dashboard fetch error", err);
+        setError("Failed to load full admin overview statistics");
       }
     };
+
     fetchData();
   }, []);
-
-  const usersList = [
-    { name: "Dr. Arthur Vance", email: "admin@stms.edu", role: "System Administrator", status: "Active" },
-    { name: "Prof. Clara Evans", email: "c.evans@stms.edu", role: "Teacher (Science)", status: "Active" },
-    { name: "Mr. John Smith", email: "j.smith@stms.edu", role: "Teacher (Math)", status: "Active" },
-    { name: "Alex Rivera", email: "a.rivera@student.stms.edu", role: "Student (10-A)", status: "Active" },
-    { name: "Sarah Rivera", email: "s.rivera@parent.stms.edu", role: "Parent / Guardian", status: "Active" },
-  ];
 
   const auditLogs = [
     { action: "TIMETABLE_GENERATE", user: "admin@stms.edu", time: "10 minutes ago", detail: "Validated period allocations across grades 10A-10D" },
@@ -67,10 +96,18 @@ function AdminDashboard() {
             className="btn-primary-action"
             onClick={() => navigate("/add-schedule")}
           >
+            <PlusCircle size={15} />
             + Create Schedule
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert-error" style={{ display: "flex", alignItems: "center", gap: 8, padding: 12, background: "#fef2f2", color: "#991b1b", borderRadius: 8, border: "1px solid #fecaca", marginBottom: 16 }}>
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       {/* Overview Stat Cards */}
       <div className="stats-bar" style={{ marginBottom: "28px" }}>
@@ -85,7 +122,7 @@ function AdminDashboard() {
         <div className="stat-card" onClick={() => navigate("/resources")} style={{ cursor: "pointer" }}>
           <div className="stat-icon">🏫</div>
           <div className="stat-info">
-            <span className="stat-value">5 Facilities</span>
+            <span className="stat-value">{roomsCount} Facilities</span>
             <span className="stat-label">Classrooms & Labs</span>
           </div>
         </div>
@@ -93,7 +130,7 @@ function AdminDashboard() {
         <div className="stat-card" onClick={() => navigate("/calendar")} style={{ cursor: "pointer" }}>
           <div className="stat-icon">🗓️</div>
           <div className="stat-info">
-            <span className="stat-value">5 Events</span>
+            <span className="stat-value">{eventsCount} Events</span>
             <span className="stat-label">Academic Calendar</span>
           </div>
         </div>
@@ -109,7 +146,6 @@ function AdminDashboard() {
 
       {/* Quick Launchpad */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 28 }}>
-
         <div
           onClick={() => navigate("/resources")}
           style={{
@@ -121,6 +157,7 @@ function AdminDashboard() {
             display: "flex",
             alignItems: "center",
             gap: 12,
+            transition: "transform 0.2s",
           }}
         >
           <Building2 size={24} color="var(--sage-primary)" />
@@ -128,7 +165,7 @@ function AdminDashboard() {
             <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-dark)" }}>
               Rooms & Facilities
             </div>
-            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Classrooms & Labs</div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Classrooms & Labs Inventory</div>
           </div>
         </div>
 
@@ -143,6 +180,7 @@ function AdminDashboard() {
             display: "flex",
             alignItems: "center",
             gap: 12,
+            transition: "transform 0.2s",
           }}
         >
           <Calendar size={24} color="var(--sage-primary)" />
@@ -150,7 +188,7 @@ function AdminDashboard() {
             <div style={{ fontWeight: "700", fontSize: "14px", color: "var(--text-dark)" }}>
               Academic Calendar
             </div>
-            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Holidays & Exams</div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>Holidays & Term Dates</div>
           </div>
         </div>
       </div>
@@ -186,7 +224,7 @@ function AdminDashboard() {
                 {usersList.map((u, i) => (
                   <tr key={i}>
                     <td>
-                      <strong>{u.name}</strong>
+                      <strong>{u.fullName}</strong>
                       <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{u.email}</div>
                     </td>
                     <td><span className="badge badge-neutral">{u.role}</span></td>

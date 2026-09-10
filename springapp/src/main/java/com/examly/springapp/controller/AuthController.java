@@ -31,6 +31,7 @@ public class AuthController {
         String password = request.get("password");
         String role = request.getOrDefault("role", "STUDENT").toUpperCase();
         String fullName = request.getOrDefault("fullName", username);
+        String className = request.getOrDefault("className", "10-A");
 
         if (username == null || username.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username is required"));
@@ -47,13 +48,20 @@ public class AuthController {
         UserAccount user = new UserAccount(
                 username,
                 email != null ? email : username + "@stms.edu",
-                password, // stored safely in demo
+                password,
                 role,
                 fullName,
                 request.getOrDefault("department", "General Academics"),
                 request.getOrDefault("employeeId", ""),
-                request.getOrDefault("studentId", "")
+                request.getOrDefault("studentId", "STU-" + (1000 + (int)(Math.random() * 9000))),
+                className
         );
+
+        if ("PARENT".equalsIgnoreCase(role)) {
+            user.setLinkedStudentUsername(request.getOrDefault("linkedStudentUsername", "student"));
+            user.setLinkedStudentName(request.getOrDefault("linkedStudentName", "Alex Rivera"));
+            user.setLinkedStudentClass(request.getOrDefault("linkedStudentClass", "10-A"));
+        }
 
         UserAccount saved = userAccountRepository.save(user);
         String token = jwtUtil.generateToken(saved.getUsername(), saved.getRole(), saved.getFullName());
@@ -75,7 +83,6 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Username and password required"));
         }
 
-        // Check in database first
         Optional<UserAccount> userOpt = userAccountRepository.findByUsername(username);
 
         UserAccount user;
@@ -86,13 +93,11 @@ public class AuthController {
                         .body(Map.of("message", "Invalid username or password"));
             }
         } else {
-            // Seeded Demo Users fallback for quick testing & grading
             user = getPreloadedDemoUser(username, password);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid username or password"));
             }
-            // Save to DB for persistence
             user = userAccountRepository.save(user);
         }
 
@@ -110,35 +115,44 @@ public class AuthController {
     public ResponseEntity<?> getProfile(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Missing or invalid Authorization header"));
+                    .body(Map.of("message", "Please sign in with your credentials to access this page."));
         }
 
         String token = authHeader.substring(7);
         if (!jwtUtil.validateToken(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("message", "Invalid or expired JWT token"));
+                    .body(Map.of("message", "Your session has expired. Please sign in again."));
         }
 
         String username = jwtUtil.extractUsername(token);
+        Optional<UserAccount> userOpt = userAccountRepository.findByUsername(username);
+
+        if (userOpt.isPresent()) {
+            return ResponseEntity.ok(buildUserDto(userOpt.get()));
+        }
+
         String role = jwtUtil.extractRole(token);
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("username", username);
+        fallback.put("role", role);
+        fallback.put("authenticated", true);
 
-        Map<String, Object> profile = new HashMap<>();
-        profile.put("username", username);
-        profile.put("role", role);
-        profile.put("authenticated", true);
-
-        return ResponseEntity.ok(profile);
+        return ResponseEntity.ok(fallback);
     }
 
     private UserAccount getPreloadedDemoUser(String username, String password) {
         if ("admin".equalsIgnoreCase(username) && "admin123".equals(password)) {
-            return new UserAccount("admin", "admin@stms.edu", "admin123", "ADMIN", "Dr. Arthur Vance", "Administration", "EMP001", "");
+            return new UserAccount("admin", "admin@stms.edu", "admin123", "ADMIN", "Dr. Arthur Vance", "Administration", "EMP001", "", "All");
         } else if ("teacher".equalsIgnoreCase(username) && "teacher123".equals(password)) {
-            return new UserAccount("teacher", "c.evans@stms.edu", "teacher123", "TEACHER", "Prof. Clara Evans", "Science & Biology", "EMP014", "");
+            return new UserAccount("teacher", "c.evans@stms.edu", "teacher123", "TEACHER", "Prof. Clara Evans", "Science & Biology", "EMP014", "", "10-A");
         } else if ("student".equalsIgnoreCase(username) && "student123".equals(password)) {
-            return new UserAccount("student", "a.rivera@student.stms.edu", "student123", "STUDENT", "Alex Rivera", "Secondary School", "", "STU1024");
+            return new UserAccount("student", "a.rivera@student.stms.edu", "student123", "STUDENT", "Alex Rivera", "Secondary School", "", "STU1024", "10-A");
         } else if ("parent".equalsIgnoreCase(username) && "parent123".equals(password)) {
-            return new UserAccount("parent", "s.rivera@parent.stms.edu", "parent123", "PARENT", "Sarah Rivera", "Parent Community", "", "");
+            UserAccount p = new UserAccount("parent", "s.rivera@parent.stms.edu", "parent123", "PARENT", "Sarah Rivera", "Parent Community", "", "", "10-A");
+            p.setLinkedStudentUsername("student");
+            p.setLinkedStudentName("Alex Rivera");
+            p.setLinkedStudentClass("10-A");
+            return p;
         }
         return null;
     }
@@ -151,6 +165,12 @@ public class AuthController {
         dto.put("role", user.getRole());
         dto.put("fullName", user.getFullName());
         dto.put("department", user.getDepartment());
+        dto.put("studentId", user.getStudentId());
+        dto.put("employeeId", user.getEmployeeId());
+        dto.put("className", user.getClassName() != null ? user.getClassName() : "10-A");
+        dto.put("linkedStudentUsername", user.getLinkedStudentUsername());
+        dto.put("linkedStudentName", user.getLinkedStudentName());
+        dto.put("linkedStudentClass", user.getLinkedStudentClass());
         return dto;
     }
 }

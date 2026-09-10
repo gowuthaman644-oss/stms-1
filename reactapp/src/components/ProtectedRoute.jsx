@@ -13,7 +13,7 @@ function ProtectedRoute({ children, allowedRoles }) {
         to="/login"
         state={{
           from: location.pathname,
-          message: "Please sign in with your credentials to access this dashboard.",
+          message: "Please sign in with your credentials to access this page.",
         }}
         replace
       />
@@ -25,7 +25,7 @@ function ProtectedRoute({ children, allowedRoles }) {
     const currentRole = (currentUser.role || "").toUpperCase();
     const hasRole = allowedRoles.some((r) => {
       const target = r.toUpperCase();
-      if (target === "ADMIN" && (currentRole === "ADMIN" || currentRole === "SYSTEM_ADMIN")) {
+      if ((target === "ADMIN" || target === "SYSTEM_ADMIN") && (currentRole === "ADMIN" || currentRole === "SYSTEM_ADMIN")) {
         return true;
       }
       return target === currentRole;

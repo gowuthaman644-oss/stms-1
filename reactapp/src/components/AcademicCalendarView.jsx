@@ -1,59 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar as CalendarIcon, Plus, Flag, Award, Sun } from "lucide-react";
-
-const INITIAL_EVENTS = [
-  {
-    id: 1,
-    eventName: "Fall Semester Orientation",
-    eventType: "TERM_START",
-    startDate: "2026-09-01",
-    endDate: "2026-09-05",
-    isHoliday: false,
-    description: "Welcome week for all incoming students and teacher briefings.",
-  },
-  {
-    id: 2,
-    eventName: "Mid-Term Examination Period",
-    eventType: "EXAM_PERIOD",
-    startDate: "2026-10-15",
-    endDate: "2026-10-22",
-    isHoliday: false,
-    description: "Special examination timetable active campus-wide.",
-  },
-  {
-    id: 3,
-    eventName: "Autumn Break & National Holiday",
-    eventType: "HOLIDAY",
-    startDate: "2026-11-02",
-    endDate: "2026-11-06",
-    isHoliday: true,
-    description: "School closed. Regular classes suspended.",
-  },
-  {
-    id: 4,
-    eventName: "Winter Final Assessments",
-    eventType: "EXAM_PERIOD",
-    startDate: "2026-12-14",
-    endDate: "2026-12-22",
-    isHoliday: false,
-    description: "Semester end practicals and theory evaluations.",
-  },
-  {
-    id: 5,
-    eventName: "Winter Vacation",
-    eventType: "HOLIDAY",
-    startDate: "2026-12-23",
-    endDate: "2027-01-08",
-    isHoliday: true,
-    description: "Campus winter break. Administrative offices open on reduced hours.",
-  },
-];
+import { Calendar as CalendarIcon, Plus, Flag, Award, Sun, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent } from "../services/scheduleService";
+import { useAuth } from "../context/AuthContext";
 
 function AcademicCalendarView() {
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const { role } = useAuth();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [showAdd, setShowAdd] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
   const [newEvent, setNewEvent] = useState({
+    academicYear: "2026-2027",
     eventName: "",
     eventType: "HOLIDAY",
     startDate: "",
@@ -62,26 +23,70 @@ function AcademicCalendarView() {
     description: "",
   });
 
-  const handleAddEvent = (e) => {
+  const loadEvents = async () => {
+    try {
+      setError("");
+      const data = await getCalendarEvents();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err.message || "Failed to load academic calendar events");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEvents();
+  }, []);
+
+  const handleAddEvent = async (e) => {
     e.preventDefault();
     if (!newEvent.eventName.trim()) return;
 
-    setEvents((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const payload = {
         ...newEvent,
-      },
-    ]);
-    setShowAdd(false);
-    setNewEvent({
-      eventName: "",
-      eventType: "HOLIDAY",
-      startDate: "",
-      endDate: "",
-      isHoliday: true,
-      description: "",
-    });
+        isHoliday: newEvent.eventType === "HOLIDAY",
+      };
+      await createCalendarEvent(payload);
+      setFeedback("Calendar event added and saved to database successfully.");
+      setShowAdd(false);
+      setNewEvent({
+        academicYear: "2026-2027",
+        eventName: "",
+        eventType: "HOLIDAY",
+        startDate: "",
+        endDate: "",
+        isHoliday: true,
+        description: "",
+      });
+      await loadEvents();
+      setTimeout(() => setFeedback(""), 3500);
+    } catch (err) {
+      setError(err.message || "Failed to save calendar event");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvent = async (id) => {
+    if (typeof window !== "undefined" && typeof window.confirm === "function") {
+      const confirmed = window.confirm("Are you sure you want to delete this calendar event?");
+      if (confirmed === false) return;
+    }
+
+    try {
+      setError("");
+      await deleteCalendarEvent(id);
+      setEvents((prev) => prev.filter((ev) => ev.id !== id));
+      setFeedback("Calendar event deleted from database.");
+      setTimeout(() => setFeedback(""), 3500);
+    } catch (err) {
+      setError(err.message || "Failed to delete calendar event");
+    }
   };
 
   const getEventIcon = (type) => {
@@ -95,6 +100,8 @@ function AcademicCalendarView() {
     }
   };
 
+  const isAdmin = role === "ADMIN" || role === "SYSTEM_ADMIN";
+
   return (
     <motion.div
       className="schedule-container"
@@ -106,146 +113,232 @@ function AcademicCalendarView() {
         <div className="header-title-group">
           <h2>
             <CalendarIcon
-              size={24}
+              size={26}
               style={{ display: "inline", verticalAlign: "middle", marginRight: 8 }}
             />
-            Academic Calendar & Holiday Management
+            Academic Calendar & Term Dates
           </h2>
           <p className="header-subtitle">
-            School terms, official holidays, examination intervals, and institutional events.
+            Official institutional schedule, exam periods, semester breaks, and national holidays (Persistent).
           </p>
         </div>
 
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn-primary-action"
-            onClick={() => setShowAdd(!showAdd)}
-          >
-            <Plus size={16} />
-            {showAdd ? "Close Form" : "Schedule Event"}
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="header-actions">
+            <button
+              type="button"
+              className="btn-primary-action"
+              onClick={() => setShowAdd(!showAdd)}
+            >
+              <Plus size={15} />
+              {showAdd ? "Close Form" : "Add Calendar Event"}
+            </button>
+          </div>
+        )}
       </div>
 
+      {feedback && (
+        <div className="alert-success" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <CheckCircle2 size={16} />
+          {feedback}
+        </div>
+      )}
+
+      {error && (
+        <div className="alert-error" style={{ display: "flex", alignItems: "center", gap: 8, padding: 12, background: "#fef2f2", color: "#991b1b", borderRadius: 8, border: "1px solid #fecaca", marginBottom: 16 }}>
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
+
+      {/* Add Event Form Modal / Expandable */}
       {showAdd && (
-        <form
-          onSubmit={handleAddEvent}
+        <div
           style={{
             background: "#ffffff",
-            padding: "24px",
+            padding: 24,
             borderRadius: "var(--radius-md)",
             border: "1px solid var(--sage-border)",
-            marginBottom: "24px",
+            marginBottom: 28,
+            boxShadow: "var(--shadow-sm)",
           }}
         >
           <h3 style={{ margin: "0 0 16px", fontFamily: "var(--font-serif)" }}>
-            Add Academic Event or Holiday
+            Create New Academic Calendar Event
           </h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-            <div className="form-group">
-              <label className="form-label">Event / Holiday Name</label>
+          <form onSubmit={handleAddEvent}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 16 }}>
+              <div>
+                <label className="form-label" style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Event Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Science Fair, Term 1 Finals"
+                  value={newEvent.eventName}
+                  onChange={(e) => setNewEvent({ ...newEvent, eventName: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Event Category</label>
+                <select
+                  value={newEvent.eventType}
+                  onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
+                >
+                  <option value="HOLIDAY">☀️ Official Holiday</option>
+                  <option value="EXAM_PERIOD">🏆 Examination Period</option>
+                  <option value="TERM_START">🚩 Term Start / Orientation</option>
+                  <option value="TERM_END">🎓 Term End / Assessments</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label" style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Start Date</label>
+                <input
+                  type="date"
+                  value={newEvent.startDate}
+                  onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="form-label" style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 600 }}>End Date</label>
+                <input
+                  type="date"
+                  value={newEvent.endDate}
+                  onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label className="form-label" style={{ display: "block", marginBottom: 4, fontSize: 13, fontWeight: 600 }}>Event Description</label>
               <input
                 type="text"
-                placeholder="e.g. Spring Break"
-                value={newEvent.eventName}
-                onChange={(e) => setNewEvent({ ...newEvent, eventName: e.target.value })}
-                required
+                placeholder="Details regarding schedule suspension or special requirements..."
+                value={newEvent.description}
+                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid var(--sage-border)" }}
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Type</label>
-              <select
-                className="filter-select"
-                style={{ width: "100%", height: "42px" }}
-                value={newEvent.eventType}
-                onChange={(e) =>
-                  setNewEvent({
-                    ...newEvent,
-                    eventType: e.target.value,
-                    isHoliday: e.target.value === "HOLIDAY",
-                  })
-                }
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid var(--sage-border)", background: "#ffffff", cursor: "pointer" }}
+                disabled={submitting}
               >
-                <option value="HOLIDAY">Holiday / Break</option>
-                <option value="EXAM_PERIOD">Examination Window</option>
-                <option value="TERM_START">Term Start / Assembly</option>
-              </select>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 6,
+                  background: "var(--sage-primary)",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 600,
+                  cursor: submitting ? "not-allowed" : "pointer",
+                }}
+              >
+                {submitting ? "Saving to Database..." : "Save to Database"}
+              </button>
             </div>
-            <div className="form-group">
-              <label className="form-label">Start Date</label>
-              <input
-                type="date"
-                value={newEvent.startDate}
-                onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">End Date</label>
-              <input
-                type="date"
-                value={newEvent.endDate}
-                onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <div className="form-group" style={{ marginTop: 12 }}>
-            <label className="form-label">Description</label>
-            <input
-              type="text"
-              placeholder="Event remarks or scheduling notes"
-              value={newEvent.description}
-              onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-            />
-          </div>
-          <button type="submit" style={{ marginTop: 12 }}>
-            Save Academic Event
-          </button>
-        </form>
+          </form>
+        </div>
       )}
 
-      {/* Events Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
-        {events.map((evt) => (
-          <div
-            key={evt.id}
-            style={{
-              background: "#ffffff",
-              border: "1px solid var(--sage-border)",
-              borderRadius: "var(--radius-md)",
-              padding: "20px 24px",
-              boxShadow: "var(--shadow-sm)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {getEventIcon(evt.eventType)}
-                <strong style={{ fontSize: "16px", color: "var(--text-dark)" }}>
-                  {evt.eventName}
-                </strong>
+      {/* Events Timeline */}
+      {loading ? (
+        <p>Loading persistent calendar events...</p>
+      ) : events.length === 0 ? (
+        <div style={{ background: "#ffffff", padding: 24, borderRadius: "var(--radius-md)", border: "1px solid var(--sage-border)" }}>
+          <p style={{ margin: 0, color: "var(--text-muted)" }}>
+            No academic events registered. Click "Add Calendar Event" to create one.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {events.map((ev) => (
+            <div
+              key={ev.id}
+              style={{
+                background: "#ffffff",
+                padding: "18px 24px",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--sage-border)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <div
+                  style={{
+                    background: "var(--cream-bg)",
+                    padding: 12,
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {getEventIcon(ev.eventType)}
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <h4 style={{ margin: 0, fontSize: "16px", color: "var(--text-dark)" }}>
+                      {ev.eventName}
+                    </h4>
+                    <span className="badge badge-neutral" style={{ fontSize: "11px" }}>
+                      {ev.eventType}
+                    </span>
+                    {ev.isHoliday && (
+                      <span className="badge badge-present" style={{ fontSize: "11px" }}>
+                        Holiday
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ margin: "0 0 6px", fontSize: "13px", color: "var(--text-dark)" }}>
+                    {ev.description || "Official institutional event."}
+                  </p>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "500" }}>
+                    🗓️ {ev.startDate} &nbsp;$\rightarrow$&nbsp; {ev.endDate}
+                  </div>
+                </div>
               </div>
-              {evt.isHoliday ? (
-                <span className="badge badge-absent">Holiday</span>
-              ) : (
-                <span className="badge badge-neutral">Academic</span>
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteEvent(ev.id)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--danger)",
+                    cursor: "pointer",
+                    padding: 8,
+                    borderRadius: 6,
+                  }}
+                  title="Delete Event"
+                >
+                  <Trash2 size={16} />
+                </button>
               )}
             </div>
-
-            <div style={{ fontSize: "13px", color: "var(--sage-primary)", fontWeight: "600" }}>
-              🗓️ {evt.startDate} ➔ {evt.endDate}
-            </div>
-
-            <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.5 }}>
-              {evt.description}
-            </p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }

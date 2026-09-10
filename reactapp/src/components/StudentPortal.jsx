@@ -1,33 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Calendar } from "lucide-react";
-import { getAllSchedules } from "../services/scheduleService";
+import { BookOpen, Clock, Calendar, AlertCircle } from "lucide-react";
+import { getAllSchedules, getAttendanceByStudent, getCurrentUserProfile } from "../services/scheduleService";
+import { useAuth } from "../context/AuthContext";
 
 function StudentPortal() {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const [profile, setProfile] = useState(currentUser || null);
   const [schedules, setSchedules] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAllSchedules();
-        setSchedules(Array.isArray(data) ? data : data.data || []);
+        setError("");
+        // 1. Fetch fresh student profile
+        try {
+          const userProf = await getCurrentUserProfile();
+          if (userProf) setProfile(userProf);
+        } catch (e) {
+          // fallback to auth context profile
+          if (currentUser) setProfile(currentUser);
+        }
+
+        // 2. Fetch all schedules
+        const scheduleData = await getAllSchedules();
+        const scheduleList = Array.isArray(scheduleData) ? scheduleData : scheduleData.data || [];
+        setSchedules(scheduleList);
+
+        // 3. Fetch student attendance
+        const studentIdOrName = (currentUser && (currentUser.studentId || currentUser.fullName)) || "Alex Rivera";
+        try {
+          const attData = await getAttendanceByStudent(studentIdOrName);
+          if (Array.isArray(attData)) setAttendanceRecords(attData);
+        } catch (e) {
+          // Non-critical if no records yet
+        }
       } catch (err) {
-        console.error("Student portal fetch error", err);
+        setError(err.message || "Failed to load student portal data");
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
 
-  // Filter for student's class (default to 10-A or first class)
-  const studentClass = "10-A";
+    fetchData();
+  }, [currentUser]);
+
+  const studentName = profile?.fullName || currentUser?.fullName || "Student";
+  const studentClass = profile?.className || currentUser?.className || "10-A";
+  const studentId = profile?.studentId || currentUser?.studentId || "STU-1024";
+
+  // Filter schedule strictly for this student's enrolled cohort
   const mySchedules = schedules.filter(
     (s) => (s.className || "").toLowerCase() === studentClass.toLowerCase()
   );
+
+  const presentCount = attendanceRecords.filter((a) => a.status === "PRESENT").length;
+  const attendanceRate = attendanceRecords.length > 0 
+    ? ((presentCount / attendanceRecords.length) * 100).toFixed(1) + "%" 
+    : "100.0%";
 
   return (
     <motion.div
@@ -46,7 +81,7 @@ function StudentPortal() {
             Student Timetable & Academic Portal
           </h2>
           <p className="header-subtitle">
-            Welcome back, <strong>Alex Rivera</strong> (Cohort: Class 10-A)
+            Welcome back, <strong>{studentName}</strong> (Cohort: Class {studentClass} • ID: {studentId})
           </p>
         </div>
 
@@ -57,17 +92,24 @@ function StudentPortal() {
             onClick={() => navigate("/calendar")}
           >
             <Calendar size={15} />
-            View Holiday Calendar
+            Academic Calendar
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="alert-error" style={{ display: "flex", alignItems: "center", gap: 8, padding: 12, background: "#fef2f2", color: "#991b1b", borderRadius: 8, border: "1px solid #fecaca", marginBottom: 16 }}>
+          <AlertCircle size={16} />
+          {error}
+        </div>
+      )}
 
       {/* Student Metrics */}
       <div className="stats-bar" style={{ marginBottom: "28px" }}>
         <div className="stat-card">
           <div className="stat-icon">🎓</div>
           <div className="stat-info">
-            <span className="stat-value">Class 10-A</span>
+            <span className="stat-value">Class {studentClass}</span>
             <span className="stat-label">Enrolled Section</span>
           </div>
         </div>
@@ -83,8 +125,8 @@ function StudentPortal() {
         <div className="stat-card">
           <div className="stat-icon">✨</div>
           <div className="stat-info">
-            <span className="stat-value">98.5%</span>
-            <span className="stat-label">Attendance Score</span>
+            <span className="stat-value">{attendanceRate}</span>
+            <span className="stat-label">Verified Attendance</span>
           </div>
         </div>
       </div>
@@ -99,7 +141,7 @@ function StudentPortal() {
       ) : mySchedules.length === 0 ? (
         <div style={{ background: "#ffffff", padding: 24, borderRadius: "var(--radius-md)", border: "1px solid var(--sage-border)" }}>
           <p style={{ margin: 0, color: "var(--text-muted)" }}>
-            No periods currently scheduled for Class {studentClass}.
+            No schedule entries currently configured for <strong>Class {studentClass}</strong>.
           </p>
         </div>
       ) : (
@@ -110,25 +152,29 @@ function StudentPortal() {
                 <th>Day</th>
                 <th>Time Window</th>
                 <th>Subject</th>
-                <th>Instructor</th>
-                <th>Attendance Tag</th>
+                <th>Teacher</th>
+                <th>Location / Session Note</th>
               </tr>
             </thead>
             <tbody>
               {mySchedules.map((s) => (
                 <tr key={s.id}>
-                  <td><strong>{s.dayOfWeek}</strong></td>
                   <td>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <Clock size={13} color="var(--sage-primary)" />
-                      <span>{s.startTime} - {s.endTime}</span>
+                    <strong>{s.dayOfWeek || s.day}</strong>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-muted)", fontSize: "13px" }}>
+                      <Clock size={13} />
+                      {s.startTime} - {s.endTime}
                     </div>
                   </td>
-                  <td><span style={{ fontWeight: "600" }}>{s.subject}</span></td>
-                  <td>👤 {s.teacherName}</td>
                   <td>
-                    <span className="badge badge-present">
-                      {s.attendanceNote || "Attended"}
+                    <strong>{s.subject}</strong>
+                  </td>
+                  <td>{s.teacherName}</td>
+                  <td>
+                    <span className="badge badge-neutral">
+                      {s.attendanceNote || "Standard Lecture"}
                     </span>
                   </td>
                 </tr>

@@ -17,11 +17,15 @@ public class UserAccount {
     private String username;
     private String email;
     private String passwordHash;
-    private String role; // SYSTEM_ADMIN, ACADEMIC_ADMIN, TEACHER, STUDENT, PARENT, GUEST
+    private String role; // SYSTEM_ADMIN, ADMIN, TEACHER, STUDENT, PARENT
     private String fullName;
     private String department;
     private String employeeId;
     private String studentId;
+    private String className; // e.g. "10-A"
+    private String linkedStudentUsername; // for Parent role
+    private String linkedStudentName;     // for Parent role
+    private String linkedStudentClass;    // for Parent role
     private boolean isActive = true;
 
     public UserAccount() {
@@ -36,6 +40,19 @@ public class UserAccount {
         this.department = department;
         this.employeeId = employeeId;
         this.studentId = studentId;
+        this.isActive = true;
+    }
+
+    public UserAccount(String username, String email, String passwordHash, String role, String fullName, String department, String employeeId, String studentId, String className) {
+        this.username = username;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.role = role;
+        this.fullName = fullName;
+        this.department = department;
+        this.employeeId = employeeId;
+        this.studentId = studentId;
+        this.className = className;
         this.isActive = true;
     }
 
@@ -109,6 +126,38 @@ public class UserAccount {
 
     public void setStudentId(String studentId) {
         this.studentId = studentId;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public String getLinkedStudentUsername() {
+        return linkedStudentUsername;
+    }
+
+    public void setLinkedStudentUsername(String linkedStudentUsername) {
+        this.linkedStudentUsername = linkedStudentUsername;
+    }
+
+    public String getLinkedStudentName() {
+        return linkedStudentName;
+    }
+
+    public void setLinkedStudentName(String linkedStudentName) {
+        this.linkedStudentName = linkedStudentName;
+    }
+
+    public String getLinkedStudentClass() {
+        return linkedStudentClass;
+    }
+
+    public void setLinkedStudentClass(String linkedStudentClass) {
+        this.linkedStudentClass = linkedStudentClass;
     }
 
     public boolean isActive() {

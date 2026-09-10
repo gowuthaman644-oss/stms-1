@@ -28,28 +28,46 @@ function App() {
           <Navbar />
           <main className="main-content">
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
+              {/* Protected Schedule Management Routes */}
               <Route
                 path="/add-schedule"
-                element={<AddScheduleEntry />}
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN", "SYSTEM_ADMIN", "TEACHER"]}>
+                    <AddScheduleEntry />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
                 path="/edit/:id"
-                element={<EditScheduleEntry />}
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN", "SYSTEM_ADMIN", "TEACHER"]}>
+                    <EditScheduleEntry />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
                 path="/edit-schedule/:id"
-                element={<EditScheduleEntry />}
+                element={
+                  <ProtectedRoute allowedRoles={["ADMIN", "SYSTEM_ADMIN", "TEACHER"]}>
+                    <EditScheduleEntry />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
                 path="/view-schedule"
-                element={<ViewScheduleEntries />}
+                element={
+                  <ProtectedRoute>
+                    <ViewScheduleEntries />
+                  </ProtectedRoute>
+                }
               />
 
               {/* Protected Role-Based Dashboards */}
@@ -89,6 +107,7 @@ function App() {
                 }
               />
 
+              {/* Protected Facilities and Calendar */}
               <Route
                 path="/resources"
                 element={
@@ -106,6 +125,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Catch-all fallback */}
+              <Route path="*" element={<Home />} />
             </Routes>
           </main>
           <Footer />

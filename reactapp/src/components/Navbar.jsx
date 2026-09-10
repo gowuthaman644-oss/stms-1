@@ -12,13 +12,13 @@ import {
   LogOut,
   LogIn,
 } from "lucide-react";
-import { useAuth, DEMO_ROLES } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import "./Navbar.css";
 
 function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser, role, switchRole, logout } = useAuth();
+  const { currentUser, role, logout, isAuthenticated } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
@@ -51,16 +51,18 @@ function Navbar() {
             <span>Home</span>
           </Link>
 
-          <Link
-            to="/view-schedule"
-            className={`nav-link ${isActive("/view-schedule") ? "active" : ""}`}
-          >
-            <Calendar size={14} />
-            <span>Timetable</span>
-          </Link>
+          {isAuthenticated && (
+            <Link
+              to="/view-schedule"
+              className={`nav-link ${isActive("/view-schedule") ? "active" : ""}`}
+            >
+              <Calendar size={14} />
+              <span>Timetable</span>
+            </Link>
+          )}
 
           {/* Admin Role Links */}
-          {(role === "SYSTEM_ADMIN" || role === "ADMIN") && (
+          {isAuthenticated && (role === "SYSTEM_ADMIN" || role === "ADMIN") && (
             <>
               <Link
                 to="/admin"
@@ -87,7 +89,7 @@ function Navbar() {
           )}
 
           {/* Teacher Role Links */}
-          {role === "TEACHER" && (
+          {isAuthenticated && role === "TEACHER" && (
             <>
               <Link
                 to="/teacher"
@@ -114,7 +116,7 @@ function Navbar() {
           )}
 
           {/* Student Role Links */}
-          {role === "STUDENT" && (
+          {isAuthenticated && role === "STUDENT" && (
             <>
               <Link
                 to="/student"
@@ -134,7 +136,7 @@ function Navbar() {
           )}
 
           {/* Parent Role Links */}
-          {role === "PARENT" && (
+          {isAuthenticated && role === "PARENT" && (
             <>
               <Link
                 to="/parent"
@@ -154,7 +156,7 @@ function Navbar() {
           )}
 
           {/* Add Schedule Button (Only for Staff: Admin & Teacher) */}
-          {isStaff && (
+          {isAuthenticated && isStaff && (
             <Link
               to="/add-schedule"
               className={`nav-link nav-link-btn ${
@@ -167,56 +169,47 @@ function Navbar() {
           )}
         </div>
 
-        {/* Right Auth / Role Switcher Widget */}
+        {/* Right Auth User Chip / Sign In Buttons */}
         <div className="role-switcher-widget">
-          {currentUser ? (
+          {isAuthenticated && currentUser ? (
             <>
               <div className="role-user-badge">
                 <span className="role-avatar">{currentUser.avatar || "👤"}</span>
                 <div className="role-details">
                   <span className="user-name">{currentUser.fullName}</span>
                   <span className="user-role-label">
-                    🔒 {currentUser.label || role}
+                    🔒 {currentUser.role} {currentUser.className ? `• ${currentUser.className}` : ""}
                   </span>
                 </div>
               </div>
 
               <span className="role-divider"></span>
 
-              <select
-                className="role-selector-dropdown"
-                value={role || ""}
-                onChange={(e) => switchRole(e.target.value)}
-                title="Switch User Role (SRS RBAC Simulation)"
-              >
-                {DEMO_ROLES.map((r) => (
-                  <option key={r.role} value={r.role}>
-                    {r.avatar} {r.label}
-                  </option>
-                ))}
-              </select>
-
               <button
                 type="button"
                 onClick={handleLogout}
                 className="logout-btn"
-                title="Sign Out"
+                title="Sign Out (clears JWT)"
               >
                 <LogOut size={13} />
+                <span style={{ fontSize: "11px", fontWeight: "600", marginLeft: "4px" }}>Logout</span>
               </button>
             </>
           ) : (
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               <Link
                 to="/login"
                 className="nav-link"
                 style={{
-                  padding: "5px 12px",
+                  padding: "5px 14px",
                   fontSize: "12px",
                   fontWeight: "600",
                   borderRadius: "6px",
                   border: "1px solid var(--sage-border)",
                   background: "#ffffff",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
                 }}
               >
                 <LogIn size={13} />
@@ -226,7 +219,7 @@ function Navbar() {
                 to="/register"
                 className="nav-link"
                 style={{
-                  padding: "5px 12px",
+                  padding: "5px 14px",
                   fontSize: "12px",
                   fontWeight: "600",
                   borderRadius: "6px",

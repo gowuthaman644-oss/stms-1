@@ -1,32 +1,87 @@
 package com.examly.springapp.controller;
 
-import com.examly.springapp.model.ScheduleEntry;
-import com.examly.springapp.service.ScheduleService;
+import com.examly.springapp.model.AttendanceRecord;
+import com.examly.springapp.repository.AttendanceRepository;
 import com.examly.springapp.util.JwtUtil;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/schedule")
+@RequestMapping("/api/attendance")
 @CrossOrigin(origins = "*")
-public class ScheduleController {
+public class AttendanceController {
 
-    private final ScheduleService scheduleService;
+    private final AttendanceRepository attendanceRepository;
     private final JwtUtil jwtUtil;
 
-    public ScheduleController(ScheduleService scheduleService, JwtUtil jwtUtil) {
-        this.scheduleService = scheduleService;
+    public AttendanceController(AttendanceRepository attendanceRepository, JwtUtil jwtUtil) {
+        this.attendanceRepository = attendanceRepository;
         this.jwtUtil = jwtUtil;
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addSchedule(
-            @RequestBody ScheduleEntry scheduleEntry,
+    @GetMapping
+    public ResponseEntity<?> getAllAttendance(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired JWT token"));
+            }
+        }
+
+        List<AttendanceRecord> records = attendanceRepository.findAll();
+        return ResponseEntity.ok(records);
+    }
+
+    @GetMapping("/class/{className}")
+    public ResponseEntity<?> getAttendanceByClass(
+            @PathVariable String className,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired JWT token"));
+            }
+        }
+
+        List<AttendanceRecord> records = attendanceRepository.findByClassName(className);
+        return ResponseEntity.ok(records);
+    }
+
+    @GetMapping("/student/{studentId}")
+    public ResponseEntity<?> getAttendanceByStudent(
+            @PathVariable String studentId,
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            if (!jwtUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid or expired JWT token"));
+            }
+        }
+
+        List<AttendanceRecord> records = attendanceRepository.findByStudentId(studentId);
+        if (records.isEmpty()) {
+            records = attendanceRepository.findByStudentName(studentId);
+        }
+        return ResponseEntity.ok(records);
+    }
+
+    @PostMapping("/mark")
+    public ResponseEntity<?> markAttendance(
+            @RequestBody AttendanceRecord record,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -39,88 +94,33 @@ public class ScheduleController {
             String role = jwtUtil.extractRole(token);
             if (role != null && !role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("SYSTEM_ADMIN") && !role.equalsIgnoreCase("TEACHER")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Access denied: Only teachers and administrators can create timetable entries"));
+                        .body(Map.of("message", "Only teachers and administrators can mark student attendance"));
             }
         }
 
-        if (scheduleEntry.getClassName() == null || scheduleEntry.getClassName().trim().isEmpty()) {
+        if (record.getClassName() == null || record.getClassName().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Class name is required"));
         }
-        if (scheduleEntry.getSubject() == null || scheduleEntry.getSubject().trim().isEmpty()) {
+        if (record.getSubject() == null || record.getSubject().trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Subject is required"));
         }
 
-        ScheduleEntry saved = scheduleService.addSchedule(scheduleEntry);
-        return ResponseEntity.ok(saved);
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllSchedules(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (!jwtUtil.validateToken(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired JWT token"));
-            }
+        if (record.getDate() == null || record.getDate().trim().isEmpty()) {
+            record.setDate(LocalDate.now().toString());
+        }
+        if (record.getStatus() == null || record.getStatus().trim().isEmpty()) {
+            record.setStatus("PRESENT");
+        }
+        if (record.getRecordedAt() == null || record.getRecordedAt().trim().isEmpty()) {
+            record.setRecordedAt(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
         }
 
-        List<ScheduleEntry> schedules = scheduleService.getAllSchedules();
-        return ResponseEntity.ok(schedules);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getScheduleById(
-            @PathVariable Long id,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (!jwtUtil.validateToken(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired JWT token"));
-            }
-        }
-
-        ScheduleEntry entry = scheduleService.getScheduleById(id);
-        if (entry == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(entry);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateSchedule(
-            @PathVariable Long id,
-            @RequestBody ScheduleEntry scheduleEntry,
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (!jwtUtil.validateToken(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid or expired JWT token"));
-            }
-
-            String role = jwtUtil.extractRole(token);
-            if (role != null && !role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("SYSTEM_ADMIN") && !role.equalsIgnoreCase("TEACHER")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Access denied: Only teachers and administrators can modify timetable entries"));
-            }
-        }
-
-        ScheduleEntry updated = scheduleService.updateSchedule(id, scheduleEntry);
-        if (updated == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(updated);
+        AttendanceRecord saved = attendanceRepository.save(record);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteSchedule(
+    public ResponseEntity<?> deleteAttendance(
             @PathVariable Long id,
             @RequestHeader(value = "Authorization", required = false) String authHeader) {
 
@@ -132,18 +132,17 @@ public class ScheduleController {
             }
 
             String role = jwtUtil.extractRole(token);
-            if (role != null && !role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("SYSTEM_ADMIN") && !role.equalsIgnoreCase("TEACHER")) {
+            if (role != null && !role.equalsIgnoreCase("ADMIN") && !role.equalsIgnoreCase("SYSTEM_ADMIN")) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(Map.of("message", "Access denied: Only teachers and administrators can delete timetable entries"));
+                        .body(Map.of("message", "Only administrators can delete attendance records"));
             }
         }
 
-        ScheduleEntry existing = scheduleService.getScheduleById(id);
-        if (existing == null) {
+        if (!attendanceRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
 
-        scheduleService.deleteSchedule(id);
-        return ResponseEntity.ok(Map.of("message", "Schedule entry deleted successfully"));
+        attendanceRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Attendance record deleted successfully"));
     }
 }
